@@ -12,11 +12,15 @@ import (
 	"path/filepath"
 )
 
+// Cylinder provides a [RoundTripper](https://golang.org/pkg/net/http/#RoundTripper)
+// that records interactions sent through it's `Parent`.
 type Cylinder struct {
 	Parent http.RoundTripper
 	Path   string
 }
 
+// RoundTrip records each response in a file
+// named with the md5 hash of it's request.
 func (c *Cylinder) RoundTrip(req *http.Request) (*http.Response, error) {
 	rb, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
@@ -42,10 +46,16 @@ func (c *Cylinder) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
+// Crank provides a [RoundTripper](https://golang.org/pkg/net/http/#RoundTripper)
+// that plays back the matching recorded response in `Path`
+// for the incoming request.
 type Crank struct {
 	Path string
 }
 
+// RoundTrip matches the md5 hash for a request to a recorded response.
+// If a file in `Path` mataches the hash the response recorded within
+// is returned.
 func (c *Crank) RoundTrip(req *http.Request) (*http.Response, error) {
 	rb, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
@@ -62,6 +72,8 @@ func (c *Crank) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.ReadResponse(bufio.NewReader(bytes.NewBuffer(respb)), req)
 }
 
+// Record sets the http.DefaultClient transport
+// to a Cylinder wrapping http.DefaultTransport.
 func Record(path string) {
 	http.DefaultClient.Transport = &Cylinder{
 		Path:   path,
@@ -69,6 +81,8 @@ func Record(path string) {
 	}
 }
 
+// Play sets the http.DefaultClient transport
+// to a Crank wrapping http.DefaultTransport.
 func Play(path string) {
 	http.DefaultClient.Transport = &Crank{
 		Path: path,

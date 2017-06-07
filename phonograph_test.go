@@ -10,7 +10,8 @@ import (
 )
 
 func Test_Phonograph(t *testing.T) {
-	phonograph.Record("tests")
+	p := "testdata"
+	phonograph.Record(p)
 	s := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		rw.Write([]byte("test"))
 	}))
@@ -21,7 +22,7 @@ func Test_Phonograph(t *testing.T) {
 	}
 	fmt.Println(resp)
 
-	phonograph.Play("tests")
+	phonograph.Play(p)
 
 	rec, err := http.Get(s.URL)
 	if err != nil {
